@@ -1,0 +1,24 @@
+{
+  "name": "angular-pluggable",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "typings": "dist/types/src/index.d.ts",
+  "author": "moJiXiang",
+  "license": "MIT",
+  "scripts": {
+    "clear": "rimraf compiler && rimraf dist",
+    "build": "yarn clear && ./node_modules/.bin/ngc -p ./tsconfig.json &&  ./node_modules/.bin/rollup --config rollup.config.js"
+  },
+  "devDependencies": {
+    "@angular/compiler": "11.2.3",
+    "@angular/compiler-cli": "11.2.3",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.48.0",
+    "typescript": "4.0.2"
+  },
+  "dependencies": {
+    "@angular/common": "11.2.3",
+    "@angular/core": "11.2.3",
+    "rxjs": "^7.0.1"
+  }
+}
