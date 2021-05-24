@@ -9,9 +9,13 @@ import {
   NgModule,
   OnInit,
   Directive,
+  ɵcreateInjector as createInjector,
+  Injector,
+  Inject,
 } from "@angular/core";
 import { Event, RenderderEvent } from "src/Event";
 import { usePluginStore } from "../hooks/usePluginStore";
+import { ComponentUrl } from "./rendererPlugin";
 
 @Component({
   selector: "Renderer",
@@ -25,7 +29,7 @@ export class RendererComponent implements OnInit, AfterViewInit {
 
   private pluginStore = usePluginStore();
 
-  constructor(private componentFactoryResolver: ComponentFactoryResolver) {
+  constructor(private injector: Injector) {
     this.pluginStore.addEventListener(
       "Renderer.componentUpdated",
       (event: RenderderEvent) => {
@@ -43,17 +47,17 @@ export class RendererComponent implements OnInit, AfterViewInit {
   renderComponent(placement: string) {
     console.log(">> Renderer render");
     this.componentAnchor.clear();
-    const components = this.pluginStore.execFunction(
-      "Renderer.getComponentsInPlacement",
+    const modules = this.pluginStore.execFunction(
+      "Renderer.getModulesInPlacement",
       placement
     );
 
-    if (components && components.length > 0) {
-      (components as Type<Component>[]).forEach((component) => {
-        const componentFactory =
-          this.componentFactoryResolver.resolveComponentFactory(component);
-
-        this.componentAnchor.createComponent(componentFactory);
+    if (modules && modules.length > 0) {
+      (modules as NgModule[]).forEach((module) => {
+        const injector = createInjector(module, this.injector);
+        const componentFactory = injector.get(module).resolveComponentFactory();
+        const componentRef =
+          this.componentAnchor.createComponent(componentFactory);
       });
     }
   }
@@ -67,10 +71,7 @@ export class RendererDirector implements OnInit, AfterViewInit {
 
   private pluginStore = usePluginStore();
 
-  constructor(
-    private ref: ViewContainerRef,
-    private componentFactoryResolver: ComponentFactoryResolver
-  ) {
+  constructor(private ref: ViewContainerRef, private injector: Injector) {
     this.pluginStore.addEventListener(
       "Renderer.componentUpdated",
       (event: RenderderEvent) => {
@@ -88,15 +89,15 @@ export class RendererDirector implements OnInit, AfterViewInit {
   renderComponent(placement: string) {
     console.log(">> Renderer render: ", this.placement);
     this.ref.clear();
-    const components = this.pluginStore.execFunction(
-      "Renderer.getComponentsInPlacement",
+    const modules = this.pluginStore.execFunction(
+      "Renderer.getModulesInPlacement",
       placement
     );
 
-    if (components && components.length > 0) {
-      (components as Type<Component>[]).forEach((component) => {
-        const componentFactory =
-          this.componentFactoryResolver.resolveComponentFactory(component);
+    if (modules && modules.length > 0) {
+      (modules as NgModule[]).forEach((module) => {
+        const injector = createInjector(module, this.injector);
+        const componentFactory = injector.get(module).resolveComponentFactory();
 
         this.ref.createComponent(componentFactory);
       });

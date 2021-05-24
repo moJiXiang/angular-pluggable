@@ -5,7 +5,7 @@
     "experimentalDecorators": true,
     "strict": true,
     "strictPropertyInitialization": false,
-    "module": "es2015",
+    "module": "esnext",
     "moduleResolution": "node",
     "rootDir": ".",
     "sourceMap": true,
