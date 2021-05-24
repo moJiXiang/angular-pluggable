@@ -12,8 +12,7 @@
     "inlineSources": true,
     "target": "es5",
     "skipLibCheck": true,
-    "declaration": true,
-    "declarationDir": "dist/types",
+    "declaration": false,
     "lib": ["es2015", "dom"],
     "typeRoots": ["node_modules/@types/"],
     "outDir": "compiler"

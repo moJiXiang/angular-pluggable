@@ -1,17 +1,24 @@
 {
   "name": "angular-pluggable",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "main": "dist/index.js",
-  "typings": "dist/types/src/index.d.ts",
+  "types": "dist/index.d.ts",
   "author": "moJiXiang",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moJiXiang/angular-pluggable"
+  },
   "scripts": {
     "clear": "rimraf compiler && rimraf dist",
+    "build:dts": "npm-dts generate --entry src/index.ts --output dist/index.d.ts",
     "build": "yarn clear && ./node_modules/.bin/ngc -p ./tsconfig.json &&  ./node_modules/.bin/rollup --config rollup.config.js"
   },
   "devDependencies": {
     "@angular/compiler": "11.2.3",
     "@angular/compiler-cli": "11.2.3",
+    "dts-generator": "^3.0.0",
+    "npm-dts": "^1.3.9",
     "rimraf": "^3.0.2",
     "rollup": "^2.48.0",
     "typescript": "4.0.2"
