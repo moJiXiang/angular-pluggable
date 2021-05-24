@@ -21,7 +21,7 @@ import { ComponentUrl } from "./rendererPlugin";
   selector: "Renderer",
   template: `<ng-container #componentAnchor></ng-container>`,
 })
-export class RendererComponent implements OnInit, AfterViewInit {
+export class RendererComponent {
   @Input() placement!: string;
 
   @ViewChild("componentAnchor", { read: ViewContainerRef })
@@ -30,6 +30,7 @@ export class RendererComponent implements OnInit, AfterViewInit {
   private pluginStore = usePluginStore();
 
   constructor(private injector: Injector) {
+    console.log(">> Renderer Component constructor");
     this.pluginStore.addEventListener(
       "Renderer.componentUpdated",
       (event: RenderderEvent) => {
@@ -39,10 +40,6 @@ export class RendererComponent implements OnInit, AfterViewInit {
       }
     );
   }
-
-  ngOnInit() {}
-
-  ngAfterViewInit() {}
 
   renderComponent(placement: string) {
     console.log(">> Renderer render");
@@ -66,7 +63,7 @@ export class RendererComponent implements OnInit, AfterViewInit {
 @Directive({
   selector: "[renderer]",
 })
-export class RendererDirector implements OnInit, AfterViewInit {
+export class RendererDirector {
   @Input() placement!: string;
 
   private pluginStore = usePluginStore();
@@ -81,10 +78,6 @@ export class RendererDirector implements OnInit, AfterViewInit {
       }
     );
   }
-
-  ngOnInit() {}
-
-  ngAfterViewInit() {}
 
   renderComponent(placement: string) {
     console.log(">> Renderer render: ", this.placement);
