@@ -21,7 +21,7 @@ import { ComponentUrl } from "./rendererPlugin";
   selector: "Renderer",
   template: `<ng-container #componentAnchor></ng-container>`,
 })
-export class RendererComponent {
+export class RendererComponent implements AfterViewInit {
   @Input() placement!: string;
 
   @ViewChild("componentAnchor", { read: ViewContainerRef })
@@ -29,13 +29,18 @@ export class RendererComponent {
 
   private pluginStore = usePluginStore();
 
-  constructor(private injector: Injector) {
-    console.log(">> Renderer Component constructor");
+  constructor(private injector: Injector) {}
+
+  ngAfterViewInit() {
     this.pluginStore.addEventListener(
       "Renderer.componentUpdated",
       (event: RenderderEvent) => {
         if (event.placement === this.placement) {
-          this.renderComponent(event.placement);
+          // https://segmentfault.com/a/1190000013972657
+          // ExpressionChangedAfterItHasBeenCheckedError error
+          Promise.resolve(null).then(() => {
+            this.renderComponent(event.placement);
+          });
         }
       }
     );
@@ -63,17 +68,21 @@ export class RendererComponent {
 @Directive({
   selector: "[renderer]",
 })
-export class RendererDirector {
+export class RendererDirector implements AfterViewInit {
   @Input() placement!: string;
 
   private pluginStore = usePluginStore();
 
-  constructor(private ref: ViewContainerRef, private injector: Injector) {
+  constructor(private ref: ViewContainerRef, private injector: Injector) {}
+
+  ngAfterViewInit() {
     this.pluginStore.addEventListener(
       "Renderer.componentUpdated",
       (event: RenderderEvent) => {
         if (event.placement === this.placement) {
-          this.renderComponent(event.placement);
+          Promise.resolve(null).then(() => {
+            this.renderComponent(event.placement);
+          });
         }
       }
     );
