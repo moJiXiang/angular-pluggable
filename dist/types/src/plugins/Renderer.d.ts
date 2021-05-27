@@ -1,11 +1,11 @@
-import { ViewContainerRef, AfterViewInit, Injector } from "@angular/core";
+import { ViewContainerRef, AfterViewInit, ComponentFactoryResolver } from "@angular/core";
 import * as i0 from "@angular/core";
 export declare class RendererComponent implements AfterViewInit {
-    private injector;
+    private resolver;
     placement: string;
     componentAnchor: ViewContainerRef;
     private pluginStore;
-    constructor(injector: Injector);
+    constructor(resolver: ComponentFactoryResolver);
     ngAfterViewInit(): void;
     renderComponent(placement: string): void;
     static ɵfac: i0.ɵɵFactoryDef<RendererComponent, never>;
@@ -13,10 +13,10 @@ export declare class RendererComponent implements AfterViewInit {
 }
 export declare class RendererDirector implements AfterViewInit {
     private ref;
-    private injector;
+    private resolver;
     placement: string;
     private pluginStore;
-    constructor(ref: ViewContainerRef, injector: Injector);
+    constructor(ref: ViewContainerRef, resolver: ComponentFactoryResolver);
     ngAfterViewInit(): void;
     renderComponent(placement: string): void;
     static ɵfac: i0.ɵɵFactoryDef<RendererDirector, never>;

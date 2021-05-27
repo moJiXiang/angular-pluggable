@@ -218,7 +218,7 @@
         FunctionNames["RENDERER_REGIST_DIALOG_COMPONENT"] = "Renderer.registDialogComponent";
         FunctionNames["RENDERER_GET_DIALOG_COMPONENT"] = "Renderer.getDialogComponent";
         FunctionNames["RENDERER_REMOVE"] = "Renderer.remove";
-        FunctionNames["RENDERER_GET_MODULES_IN_PLACEMENT"] = "Renderer.getModulesInPlacement";
+        FunctionNames["RENDERER_GET_COMPONENTS_IN_PLACEMENT"] = "Renderer.getComponentsInPlacement";
         FunctionNames["RENDERER_COMPONENT_UPDATED"] = "Renderer.componentUpdated";
         FunctionNames["REGIST_OBSERVER"] = "Regist.observer";
     })(exports.FunctionNames || (exports.FunctionNames = {}));
@@ -227,7 +227,7 @@
         function RendererPlugin() {
             this.pluginStore = new PluginStore();
             this.dialogComponentMap = new Map();
-            this.ngModuleMap = new Map();
+            this.componentsMap = new Map();
         }
         RendererPlugin.prototype.getPluginName = function () {
             return "Renderer@1.0.0";
@@ -238,30 +238,30 @@
         RendererPlugin.prototype.init = function (pluginStore) {
             this.pluginStore = pluginStore;
         };
-        RendererPlugin.prototype.addToNgModuleMap = function (placement, module) {
-            var modules = this.ngModuleMap.get(placement);
-            if (!modules) {
-                modules = [module];
+        RendererPlugin.prototype.addTocomponentsMap = function (placement, component) {
+            var components = this.componentsMap.get(placement);
+            if (!components) {
+                components = [component];
             }
             else {
-                modules.push(module);
+                components.push(component);
             }
-            this.ngModuleMap.set(placement, modules);
+            this.componentsMap.set(placement, components);
             this.pluginStore.dispatchEvent(new RenderderEvent(exports.FunctionNames.RENDERER_COMPONENT_UPDATED, placement));
         };
-        RendererPlugin.prototype.removeFromNgModuleMap = function (placement, module) {
-            var array = this.ngModuleMap.get(placement);
+        RendererPlugin.prototype.removeFromcomponentsMap = function (placement, module) {
+            var array = this.componentsMap.get(placement);
             if (array) {
                 array.splice(array.findIndex(function (item) { return item === module; }), 1);
             }
             this.pluginStore.dispatchEvent(new RenderderEvent(exports.FunctionNames.RENDERER_COMPONENT_UPDATED, placement));
         };
-        RendererPlugin.prototype.addToRenderOnceModule = function (placement, module) {
-            this.ngModuleMap.set(placement, [module]);
+        RendererPlugin.prototype.addToRenderOnceComponent = function (placement, component) {
+            this.componentsMap.set(placement, [component]);
             this.pluginStore.dispatchEvent(new RenderderEvent(exports.FunctionNames.RENDERER_COMPONENT_UPDATED, placement));
         };
-        RendererPlugin.prototype.getModulesInPlacement = function (placement) {
-            var componentArray = this.ngModuleMap.get(placement);
+        RendererPlugin.prototype.getComponentsInPlacement = function (placement) {
+            var componentArray = this.componentsMap.get(placement);
             if (!componentArray)
                 return [];
             return componentArray;
@@ -273,12 +273,12 @@
             return this.dialogComponentMap.get(componentName);
         };
         RendererPlugin.prototype.activate = function () {
-            this.pluginStore.addFunction(exports.FunctionNames.RENDERER_ADD, this.addToNgModuleMap.bind(this));
-            this.pluginStore.addFunction(exports.FunctionNames.RENDERER_ONCE, this.addToRenderOnceModule.bind(this));
+            this.pluginStore.addFunction(exports.FunctionNames.RENDERER_ADD, this.addTocomponentsMap.bind(this));
+            this.pluginStore.addFunction(exports.FunctionNames.RENDERER_ONCE, this.addToRenderOnceComponent.bind(this));
             this.pluginStore.addFunction(exports.FunctionNames.RENDERER_REGIST_DIALOG_COMPONENT, this.addToDialogComponentMap.bind(this));
             this.pluginStore.addFunction(exports.FunctionNames.RENDERER_GET_DIALOG_COMPONENT, this.getDialogComponent.bind(this));
-            this.pluginStore.addFunction(exports.FunctionNames.RENDERER_REMOVE, this.removeFromNgModuleMap.bind(this));
-            this.pluginStore.addFunction(exports.FunctionNames.RENDERER_GET_MODULES_IN_PLACEMENT, this.getModulesInPlacement.bind(this));
+            this.pluginStore.addFunction(exports.FunctionNames.RENDERER_REMOVE, this.removeFromcomponentsMap.bind(this));
+            this.pluginStore.addFunction(exports.FunctionNames.RENDERER_GET_COMPONENTS_IN_PLACEMENT, this.getComponentsInPlacement.bind(this));
         };
         RendererPlugin.prototype.deactivate = function () {
             this.pluginStore.removeFunction(exports.FunctionNames.RENDERER_ADD);
@@ -286,15 +286,15 @@
             this.pluginStore.removeFunction(exports.FunctionNames.RENDERER_REGIST_DIALOG_COMPONENT);
             this.pluginStore.removeFunction(exports.FunctionNames.RENDERER_GET_DIALOG_COMPONENT);
             this.pluginStore.removeFunction(exports.FunctionNames.RENDERER_REMOVE);
-            this.pluginStore.removeFunction(exports.FunctionNames.RENDERER_GET_MODULES_IN_PLACEMENT);
+            this.pluginStore.removeFunction(exports.FunctionNames.RENDERER_GET_COMPONENTS_IN_PLACEMENT);
         };
         return RendererPlugin;
     }());
 
     var _c0 = ["componentAnchor"];
     var RendererComponent = /** @class */ (function () {
-        function RendererComponent(injector) {
-            this.injector = injector;
+        function RendererComponent(resolver) {
+            this.resolver = resolver;
             this.pluginStore = usePluginStore();
         }
         RendererComponent.prototype.ngAfterViewInit = function () {
@@ -311,18 +311,17 @@
         };
         RendererComponent.prototype.renderComponent = function (placement) {
             var _this = this;
-            console.log(">> Renderer in " + placement);
             this.componentAnchor.clear();
-            var modules = this.pluginStore.execFunction(exports.FunctionNames.RENDERER_GET_MODULES_IN_PLACEMENT, placement);
-            if (modules && modules.length > 0) {
-                modules.forEach(function (module) {
-                    var injector = i0.ɵcreateInjector(module, _this.injector);
-                    var componentFactory = injector.get(module).resolveComponentFactory();
+            var components = this.pluginStore.execFunction(exports.FunctionNames.RENDERER_GET_COMPONENTS_IN_PLACEMENT, placement);
+            if (components && components.length > 0) {
+                components.forEach(function (component) {
+                    console.log(">> Renderer Plugin " + component.name + " in " + placement);
+                    var componentFactory = _this.resolver.resolveComponentFactory(component);
                     _this.componentAnchor.createComponent(componentFactory);
                 });
             }
         };
-        RendererComponent.ɵfac = function RendererComponent_Factory(t) { return new (t || RendererComponent)(i0__namespace.ɵɵdirectiveInject(i0__namespace.Injector)); };
+        RendererComponent.ɵfac = function RendererComponent_Factory(t) { return new (t || RendererComponent)(i0__namespace.ɵɵdirectiveInject(i0__namespace.ComponentFactoryResolver)); };
         RendererComponent.ɵcmp = i0__namespace.ɵɵdefineComponent({ type: RendererComponent, selectors: [["Renderer"]], viewQuery: function RendererComponent_Query(rf, ctx) { if (rf & 1) {
                 i0__namespace.ɵɵviewQuery(_c0, 1, i0.ViewContainerRef);
             } if (rf & 2) {
@@ -339,16 +338,16 @@
                     selector: "Renderer",
                     template: "<ng-container #componentAnchor></ng-container>",
                 }]
-        }], function () { return [{ type: i0__namespace.Injector }]; }, { placement: [{
+        }], function () { return [{ type: i0__namespace.ComponentFactoryResolver }]; }, { placement: [{
                 type: i0.Input
             }], componentAnchor: [{
                 type: i0.ViewChild,
                 args: ["componentAnchor", { read: i0.ViewContainerRef }]
             }] }); })();
     var RendererDirector = /** @class */ (function () {
-        function RendererDirector(ref, injector) {
+        function RendererDirector(ref, resolver) {
             this.ref = ref;
-            this.injector = injector;
+            this.resolver = resolver;
             this.pluginStore = usePluginStore();
         }
         RendererDirector.prototype.ngAfterViewInit = function () {
@@ -363,18 +362,17 @@
         };
         RendererDirector.prototype.renderComponent = function (placement) {
             var _this = this;
-            console.log(">> Renderer render: ", this.placement);
             this.ref.clear();
-            var modules = this.pluginStore.execFunction(exports.FunctionNames.RENDERER_GET_MODULES_IN_PLACEMENT, placement);
-            if (modules && modules.length > 0) {
-                modules.forEach(function (module) {
-                    var injector = i0.ɵcreateInjector(module, _this.injector);
-                    var componentFactory = injector.get(module).resolveComponentFactory();
+            var components = this.pluginStore.execFunction(exports.FunctionNames.RENDERER_GET_COMPONENTS_IN_PLACEMENT, placement);
+            if (components && components.length > 0) {
+                components.forEach(function (component) {
+                    console.log(">> Renderer Plugin " + component.name + " in " + placement);
+                    var componentFactory = _this.resolver.resolveComponentFactory(component);
                     _this.ref.createComponent(componentFactory);
                 });
             }
         };
-        RendererDirector.ɵfac = function RendererDirector_Factory(t) { return new (t || RendererDirector)(i0__namespace.ɵɵdirectiveInject(i0__namespace.ViewContainerRef), i0__namespace.ɵɵdirectiveInject(i0__namespace.Injector)); };
+        RendererDirector.ɵfac = function RendererDirector_Factory(t) { return new (t || RendererDirector)(i0__namespace.ɵɵdirectiveInject(i0__namespace.ViewContainerRef), i0__namespace.ɵɵdirectiveInject(i0__namespace.ComponentFactoryResolver)); };
         RendererDirector.ɵdir = i0__namespace.ɵɵdefineDirective({ type: RendererDirector, selectors: [["", "renderer", ""]], inputs: { placement: "placement" } });
         return RendererDirector;
     }());
@@ -383,7 +381,7 @@
             args: [{
                     selector: "[renderer]",
                 }]
-        }], function () { return [{ type: i0__namespace.ViewContainerRef }, { type: i0__namespace.Injector }]; }, { placement: [{
+        }], function () { return [{ type: i0__namespace.ViewContainerRef }, { type: i0__namespace.ComponentFactoryResolver }]; }, { placement: [{
                 type: i0.Input
             }] }); })();
     var RendererModule = /** @class */ (function () {

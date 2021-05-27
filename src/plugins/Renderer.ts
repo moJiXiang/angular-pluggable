@@ -10,6 +10,8 @@ import {
   ɵcreateInjector as createInjector,
   Injector,
   Inject,
+  ComponentFactoryResolver,
+  Type,
 } from "@angular/core";
 import { Event, RenderderEvent } from "../Event";
 import { FunctionNames } from "../FunctionNames";
@@ -27,7 +29,7 @@ export class RendererComponent implements AfterViewInit {
 
   private pluginStore = usePluginStore();
 
-  constructor(private injector: Injector) {}
+  constructor(private resolver: ComponentFactoryResolver) {}
 
   ngAfterViewInit() {
     this.pluginStore.addEventListener(
@@ -45,17 +47,17 @@ export class RendererComponent implements AfterViewInit {
   }
 
   renderComponent(placement: string) {
-    console.log(`>> Renderer in ${placement}`);
     this.componentAnchor.clear();
-    const modules = this.pluginStore.execFunction(
-      FunctionNames.RENDERER_GET_MODULES_IN_PLACEMENT,
+    const components = this.pluginStore.execFunction(
+      FunctionNames.RENDERER_GET_COMPONENTS_IN_PLACEMENT,
       placement
     );
 
-    if (modules && modules.length > 0) {
-      (modules as NgModule[]).forEach((module) => {
-        const injector = createInjector(module, this.injector);
-        const componentFactory = injector.get(module).resolveComponentFactory();
+    if (components && components.length > 0) {
+      (components as Type<Component>[]).forEach((component) => {
+        console.log(`>> Renderer Plugin ${component.name} in ${placement}`);
+        const componentFactory =
+          this.resolver.resolveComponentFactory(component);
         const componentRef =
           this.componentAnchor.createComponent(componentFactory);
       });
@@ -71,7 +73,10 @@ export class RendererDirector implements AfterViewInit {
 
   private pluginStore = usePluginStore();
 
-  constructor(private ref: ViewContainerRef, private injector: Injector) {}
+  constructor(
+    private ref: ViewContainerRef,
+    private resolver: ComponentFactoryResolver
+  ) {}
 
   ngAfterViewInit() {
     this.pluginStore.addEventListener(
@@ -87,17 +92,17 @@ export class RendererDirector implements AfterViewInit {
   }
 
   renderComponent(placement: string) {
-    console.log(">> Renderer render: ", this.placement);
     this.ref.clear();
-    const modules = this.pluginStore.execFunction(
-      FunctionNames.RENDERER_GET_MODULES_IN_PLACEMENT,
+    const components = this.pluginStore.execFunction(
+      FunctionNames.RENDERER_GET_COMPONENTS_IN_PLACEMENT,
       placement
     );
 
-    if (modules && modules.length > 0) {
-      (modules as NgModule[]).forEach((module) => {
-        const injector = createInjector(module, this.injector);
-        const componentFactory = injector.get(module).resolveComponentFactory();
+    if (components && components.length > 0) {
+      (components as Type<Component>[]).forEach((component) => {
+        console.log(`>> Renderer Plugin ${component.name} in ${placement}`);
+        const componentFactory =
+          this.resolver.resolveComponentFactory(component);
 
         this.ref.createComponent(componentFactory);
       });

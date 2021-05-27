@@ -2,14 +2,14 @@ import { Event, RenderderEvent } from "../Event";
 import { IPlugin } from "../interfaces/IPlugin";
 import { PluginStore } from "../PluginStore";
 import { FunctionNames } from "../FunctionNames";
-import { Component, NgModule } from "@angular/core";
+import { Component, NgModule, Type } from "@angular/core";
 
 export type ComponentUrl = string;
 
 export class RendererPlugin implements IPlugin {
   public pluginStore: PluginStore = new PluginStore();
   private dialogComponentMap = new Map<string, Component>();
-  private ngModuleMap = new Map<string, Array<NgModule>>();
+  private componentsMap = new Map<string, Array<Type<Component>>>();
 
   getPluginName() {
     return "Renderer@1.0.0";
@@ -23,22 +23,22 @@ export class RendererPlugin implements IPlugin {
     this.pluginStore = pluginStore;
   }
 
-  addToNgModuleMap(placement: string, module: NgModule) {
-    let modules = this.ngModuleMap.get(placement);
-    if (!modules) {
-      modules = [module];
+  addTocomponentsMap(placement: string, component: Type<Component>) {
+    let components = this.componentsMap.get(placement);
+    if (!components) {
+      components = [component];
     } else {
-      modules.push(module);
+      components.push(component);
     }
-    this.ngModuleMap.set(placement, modules);
+    this.componentsMap.set(placement, components);
 
     this.pluginStore.dispatchEvent(
       new RenderderEvent(FunctionNames.RENDERER_COMPONENT_UPDATED, placement)
     );
   }
 
-  removeFromNgModuleMap(placement: string, module: NgModule) {
-    let array = this.ngModuleMap.get(placement);
+  removeFromcomponentsMap(placement: string, module: NgModule) {
+    let array = this.componentsMap.get(placement);
     if (array) {
       array.splice(
         array.findIndex((item) => item === module),
@@ -50,16 +50,16 @@ export class RendererPlugin implements IPlugin {
     );
   }
 
-  addToRenderOnceModule(placement: string, module: NgModule) {
-    this.ngModuleMap.set(placement, [module]);
+  addToRenderOnceComponent(placement: string, component: Type<Component>) {
+    this.componentsMap.set(placement, [component]);
 
     this.pluginStore.dispatchEvent(
       new RenderderEvent(FunctionNames.RENDERER_COMPONENT_UPDATED, placement)
     );
   }
 
-  getModulesInPlacement(placement: string) {
-    const componentArray = this.ngModuleMap.get(placement);
+  getComponentsInPlacement(placement: string) {
+    const componentArray = this.componentsMap.get(placement);
     if (!componentArray) return [];
 
     return componentArray;
@@ -76,12 +76,12 @@ export class RendererPlugin implements IPlugin {
   activate() {
     this.pluginStore.addFunction(
       FunctionNames.RENDERER_ADD,
-      this.addToNgModuleMap.bind(this)
+      this.addTocomponentsMap.bind(this)
     );
 
     this.pluginStore.addFunction(
       FunctionNames.RENDERER_ONCE,
-      this.addToRenderOnceModule.bind(this)
+      this.addToRenderOnceComponent.bind(this)
     );
 
     this.pluginStore.addFunction(
@@ -96,12 +96,12 @@ export class RendererPlugin implements IPlugin {
 
     this.pluginStore.addFunction(
       FunctionNames.RENDERER_REMOVE,
-      this.removeFromNgModuleMap.bind(this)
+      this.removeFromcomponentsMap.bind(this)
     );
 
     this.pluginStore.addFunction(
-      FunctionNames.RENDERER_GET_MODULES_IN_PLACEMENT,
-      this.getModulesInPlacement.bind(this)
+      FunctionNames.RENDERER_GET_COMPONENTS_IN_PLACEMENT,
+      this.getComponentsInPlacement.bind(this)
     );
   }
 
@@ -117,7 +117,7 @@ export class RendererPlugin implements IPlugin {
     );
     this.pluginStore.removeFunction(FunctionNames.RENDERER_REMOVE);
     this.pluginStore.removeFunction(
-      FunctionNames.RENDERER_GET_MODULES_IN_PLACEMENT
+      FunctionNames.RENDERER_GET_COMPONENTS_IN_PLACEMENT
     );
   }
 }
