@@ -9,3 +9,5 @@ export {
 } from "./plugins/Renderer";
 export { PluginStore } from "./PluginStore";
 export { Event } from "./Event";
+export { FunctionNames } from "./FunctionNames";
+export { LocalStorage } from "./LocalStore";

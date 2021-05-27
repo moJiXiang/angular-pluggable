@@ -7,7 +7,11 @@ export default class PluginStoreInstance {
     return pluginStore;
   }
 
-  public static set() {
+  public static set<T>(context?: T) {
     pluginStore = new PluginStore();
+
+    if (context) {
+      pluginStore.useContext<T>(context);
+    }
   }
 }

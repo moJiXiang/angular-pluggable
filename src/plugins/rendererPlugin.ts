@@ -1,12 +1,14 @@
 import { Event, RenderderEvent } from "../Event";
 import { IPlugin } from "../interfaces/IPlugin";
 import { PluginStore } from "../PluginStore";
+import { FunctionNames } from "../FunctionNames";
 import { Component, NgModule } from "@angular/core";
 
 export type ComponentUrl = string;
 
 export class RendererPlugin implements IPlugin {
   public pluginStore: PluginStore = new PluginStore();
+  private dialogComponentMap = new Map<string, Component>();
   private ngModuleMap = new Map<string, Array<NgModule>>();
 
   getPluginName() {
@@ -31,7 +33,7 @@ export class RendererPlugin implements IPlugin {
     this.ngModuleMap.set(placement, modules);
 
     this.pluginStore.dispatchEvent(
-      new RenderderEvent("Renderer.componentUpdated", placement)
+      new RenderderEvent(FunctionNames.RENDERER_COMPONENT_UPDATED, placement)
     );
   }
 
@@ -44,7 +46,15 @@ export class RendererPlugin implements IPlugin {
       );
     }
     this.pluginStore.dispatchEvent(
-      new RenderderEvent("Renderer.componentUpdated", placement)
+      new RenderderEvent(FunctionNames.RENDERER_COMPONENT_UPDATED, placement)
+    );
+  }
+
+  addToRenderOnceModule(placement: string, module: NgModule) {
+    this.ngModuleMap.set(placement, [module]);
+
+    this.pluginStore.dispatchEvent(
+      new RenderderEvent(FunctionNames.RENDERER_COMPONENT_UPDATED, placement)
     );
   }
 
@@ -55,26 +65,59 @@ export class RendererPlugin implements IPlugin {
     return componentArray;
   }
 
+  addToDialogComponentMap(componentName: string, component: Component) {
+    this.dialogComponentMap.set(componentName, component);
+  }
+
+  getDialogComponent(componentName: string): Component | undefined {
+    return this.dialogComponentMap.get(componentName);
+  }
+
   activate() {
     this.pluginStore.addFunction(
-      "Renderer.add",
+      FunctionNames.RENDERER_ADD,
       this.addToNgModuleMap.bind(this)
     );
 
     this.pluginStore.addFunction(
-      "Renderer.remove",
+      FunctionNames.RENDERER_ONCE,
+      this.addToRenderOnceModule.bind(this)
+    );
+
+    this.pluginStore.addFunction(
+      FunctionNames.RENDERER_REGIST_DIALOG_COMPONENT,
+      this.addToDialogComponentMap.bind(this)
+    );
+
+    this.pluginStore.addFunction(
+      FunctionNames.RENDERER_GET_DIALOG_COMPONENT,
+      this.getDialogComponent.bind(this)
+    );
+
+    this.pluginStore.addFunction(
+      FunctionNames.RENDERER_REMOVE,
       this.removeFromNgModuleMap.bind(this)
     );
 
     this.pluginStore.addFunction(
-      "Renderer.getModulesInPlacement",
+      FunctionNames.RENDERER_GET_MODULES_IN_PLACEMENT,
       this.getModulesInPlacement.bind(this)
     );
   }
 
   deactivate() {
-    this.pluginStore.removeFunction("Renderer.add");
-    this.pluginStore.removeFunction("Renderer.remove");
-    this.pluginStore.removeFunction("Renderer.getModulesInPlacement");
+    this.pluginStore.removeFunction(FunctionNames.RENDERER_ADD);
+    this.pluginStore.removeFunction(FunctionNames.RENDERER_ONCE);
+
+    this.pluginStore.removeFunction(
+      FunctionNames.RENDERER_REGIST_DIALOG_COMPONENT
+    );
+    this.pluginStore.removeFunction(
+      FunctionNames.RENDERER_GET_DIALOG_COMPONENT
+    );
+    this.pluginStore.removeFunction(FunctionNames.RENDERER_REMOVE);
+    this.pluginStore.removeFunction(
+      FunctionNames.RENDERER_GET_MODULES_IN_PLACEMENT
+    );
   }
 }

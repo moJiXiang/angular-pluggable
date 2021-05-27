@@ -19,6 +19,7 @@
     "outDir": "compiler"
   },
   "exclude": ["node_modules"],
+  "include": ["src/**/*"],
   "files": ["src/index.ts"],
   "angularCompilerOptions": {
     "strictMetadataEmit": true

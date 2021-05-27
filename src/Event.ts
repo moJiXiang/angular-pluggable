@@ -1,8 +1,15 @@
+type BindData = { [k: string]: any };
+
 export class Event {
   name: string;
+  data?: BindData;
 
-  constructor(name: string) {
+  constructor(name: string, data?: BindData) {
     this.name = name;
+
+    if (data) {
+      this.data = data;
+    }
   }
 }
 

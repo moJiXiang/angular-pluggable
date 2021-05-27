@@ -1,7 +1,5 @@
 import {
   Component,
-  Type,
-  ComponentFactoryResolver,
   ViewChild,
   ViewContainerRef,
   Input,
@@ -13,9 +11,9 @@ import {
   Injector,
   Inject,
 } from "@angular/core";
-import { Event, RenderderEvent } from "src/Event";
+import { Event, RenderderEvent } from "../Event";
+import { FunctionNames } from "../FunctionNames";
 import { usePluginStore } from "../hooks/usePluginStore";
-import { ComponentUrl } from "./rendererPlugin";
 
 @Component({
   selector: "Renderer",
@@ -33,7 +31,7 @@ export class RendererComponent implements AfterViewInit {
 
   ngAfterViewInit() {
     this.pluginStore.addEventListener(
-      "Renderer.componentUpdated",
+      FunctionNames.RENDERER_COMPONENT_UPDATED,
       (event: RenderderEvent) => {
         if (event.placement === this.placement) {
           // https://segmentfault.com/a/1190000013972657
@@ -47,10 +45,10 @@ export class RendererComponent implements AfterViewInit {
   }
 
   renderComponent(placement: string) {
-    console.log(">> Renderer render");
+    console.log(`>> Renderer in ${placement}`);
     this.componentAnchor.clear();
     const modules = this.pluginStore.execFunction(
-      "Renderer.getModulesInPlacement",
+      FunctionNames.RENDERER_GET_MODULES_IN_PLACEMENT,
       placement
     );
 
@@ -77,7 +75,7 @@ export class RendererDirector implements AfterViewInit {
 
   ngAfterViewInit() {
     this.pluginStore.addEventListener(
-      "Renderer.componentUpdated",
+      FunctionNames.RENDERER_COMPONENT_UPDATED,
       (event: RenderderEvent) => {
         if (event.placement === this.placement) {
           Promise.resolve(null).then(() => {
@@ -92,7 +90,7 @@ export class RendererDirector implements AfterViewInit {
     console.log(">> Renderer render: ", this.placement);
     this.ref.clear();
     const modules = this.pluginStore.execFunction(
-      "Renderer.getModulesInPlacement",
+      FunctionNames.RENDERER_GET_MODULES_IN_PLACEMENT,
       placement
     );
 

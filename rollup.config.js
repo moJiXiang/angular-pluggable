@@ -7,10 +7,12 @@ export default {
     globals: {
       "@angular/core": "ng.core",
       "@angular/common": "ng.common",
+      rxjs: "rxjs",
+      semver: "semver",
     },
   },
   plugins: [],
-  external: ["@angular/core", "@angular/common", "rxjs"],
+  external: ["@angular/core", "@angular/common", "rxjs", "semver"],
   onwarn: function (warning) {
     if (
       warning.code === "THIS_IS_UNDEFINED" ||

@@ -1,8 +1,8 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@angular/core')) :
-    typeof define === 'function' && define.amd ? define(['exports', '@angular/core'], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.angularPluggable = {}, global.ng.core));
-}(this, (function (exports, i0) { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('rxjs'), require('semver'), require('@angular/core')) :
+    typeof define === 'function' && define.amd ? define(['exports', 'rxjs', 'semver', '@angular/core'], factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.angularPluggable = {}, global.rxjs, global.semver, global.ng.core));
+}(this, (function (exports, rxjs, semver, i0) { 'use strict';
 
     function _interopNamespace(e) {
         if (e && e.__esModule) return e;
@@ -59,18 +59,59 @@
 
     var PluginStore = /** @class */ (function () {
         function PluginStore() {
+            this.observerMap = new Map();
             this.functionArray = new Map();
             this.pluginMap = new Map();
             this._eventCallbackRegsitry = new EventCallbackRegsitry();
         }
+        Object.defineProperty(PluginStore.prototype, "context", {
+            get: function () {
+                return this._context;
+            },
+            enumerable: false,
+            configurable: true
+        });
+        PluginStore.prototype.dependencyValid = function (installedVersion, requiredVersion) {
+            var versionDiff = semver.diff(installedVersion, requiredVersion);
+            return ((versionDiff === null ||
+                versionDiff === "patch" ||
+                versionDiff === "minor") &&
+                semver.gte(installedVersion, requiredVersion));
+        };
+        PluginStore.prototype.useContext = function (context) {
+            this._context = context;
+        };
+        PluginStore.prototype.getContext = function () {
+            return this._context;
+        };
         PluginStore.prototype.install = function (plugin) {
+            var _this = this;
             var pluginNameAndVer = plugin.getPluginName();
             var _a = pluginNameAndVer.split("@"), pluginName = _a[0]; _a[1];
-            plugin.getDependencies();
+            var pluginDependencies = plugin.getDependencies() || [];
             // check dependencies is installed
-            this.pluginMap.set(pluginName, plugin);
-            plugin.init(this);
-            plugin.activate();
+            var installErrors = [];
+            pluginDependencies.forEach(function (dep) {
+                var _a = dep.split("@"), depName = _a[0], depVersion = _a[1];
+                var plugin = _this.pluginMap.get(depName);
+                if (!plugin) {
+                    installErrors.push("Plugin " + pluginName + ": " + depName + " has not installed!");
+                }
+                else {
+                    var _b = plugin.getPluginName().split("@"), installedVersion = _b[1];
+                    if (!_this.dependencyValid(installedVersion, depVersion)) {
+                        installErrors.push("Plugin " + pluginName + " need " + depName + "@" + depVersion + ", but " + installedVersion + " installed!");
+                    }
+                }
+            });
+            if (installErrors.length === 0) {
+                this.pluginMap.set(pluginName, plugin);
+                plugin.init(this);
+                plugin.activate();
+            }
+            else {
+                installErrors.forEach(function (err) { return console.error(err); });
+            }
         };
         PluginStore.prototype.uninstall = function (pluginName) {
             var plugin = this.pluginMap.get(pluginName);
@@ -104,6 +145,12 @@
         PluginStore.prototype.dispatchEvent = function (event) {
             this._eventCallbackRegsitry.dispatchEvent(event);
         };
+        PluginStore.prototype.registObserver = function (name, data) {
+            this.observerMap.set(name, new rxjs.BehaviorSubject(data || null));
+        };
+        PluginStore.prototype.getObserver = function (name) {
+            return this.observerMap.get(name);
+        };
         return PluginStore;
     }());
 
@@ -114,14 +161,17 @@
         PluginStoreInstance.get = function () {
             return pluginStore;
         };
-        PluginStoreInstance.set = function () {
+        PluginStoreInstance.set = function (context) {
             pluginStore = new PluginStore();
+            if (context) {
+                pluginStore.useContext(context);
+            }
         };
         return PluginStoreInstance;
     }());
 
-    function createPluginStore() {
-        PluginStoreInstance.set();
+    function createPluginStore(context) {
+        PluginStoreInstance.set(context);
         return PluginStoreInstance.get();
     }
 
@@ -143,8 +193,11 @@
         };
     })();
     var Event = /** @class */ (function () {
-        function Event(name) {
+        function Event(name, data) {
             this.name = name;
+            if (data) {
+                this.data = data;
+            }
         }
         return Event;
     }());
@@ -158,9 +211,22 @@
         return RenderderEvent;
     }(Event));
 
+    exports.FunctionNames = void 0;
+    (function (FunctionNames) {
+        FunctionNames["RENDERER_ADD"] = "Renderer.add";
+        FunctionNames["RENDERER_ONCE"] = "Renderer.once";
+        FunctionNames["RENDERER_REGIST_DIALOG_COMPONENT"] = "Renderer.registDialogComponent";
+        FunctionNames["RENDERER_GET_DIALOG_COMPONENT"] = "Renderer.getDialogComponent";
+        FunctionNames["RENDERER_REMOVE"] = "Renderer.remove";
+        FunctionNames["RENDERER_GET_MODULES_IN_PLACEMENT"] = "Renderer.getModulesInPlacement";
+        FunctionNames["RENDERER_COMPONENT_UPDATED"] = "Renderer.componentUpdated";
+        FunctionNames["REGIST_OBSERVER"] = "Regist.observer";
+    })(exports.FunctionNames || (exports.FunctionNames = {}));
+
     var RendererPlugin = /** @class */ (function () {
         function RendererPlugin() {
             this.pluginStore = new PluginStore();
+            this.dialogComponentMap = new Map();
             this.ngModuleMap = new Map();
         }
         RendererPlugin.prototype.getPluginName = function () {
@@ -181,14 +247,18 @@
                 modules.push(module);
             }
             this.ngModuleMap.set(placement, modules);
-            this.pluginStore.dispatchEvent(new RenderderEvent("Renderer.componentUpdated", placement));
+            this.pluginStore.dispatchEvent(new RenderderEvent(exports.FunctionNames.RENDERER_COMPONENT_UPDATED, placement));
         };
         RendererPlugin.prototype.removeFromNgModuleMap = function (placement, module) {
             var array = this.ngModuleMap.get(placement);
             if (array) {
                 array.splice(array.findIndex(function (item) { return item === module; }), 1);
             }
-            this.pluginStore.dispatchEvent(new RenderderEvent("Renderer.componentUpdated", placement));
+            this.pluginStore.dispatchEvent(new RenderderEvent(exports.FunctionNames.RENDERER_COMPONENT_UPDATED, placement));
+        };
+        RendererPlugin.prototype.addToRenderOnceModule = function (placement, module) {
+            this.ngModuleMap.set(placement, [module]);
+            this.pluginStore.dispatchEvent(new RenderderEvent(exports.FunctionNames.RENDERER_COMPONENT_UPDATED, placement));
         };
         RendererPlugin.prototype.getModulesInPlacement = function (placement) {
             var componentArray = this.ngModuleMap.get(placement);
@@ -196,15 +266,27 @@
                 return [];
             return componentArray;
         };
+        RendererPlugin.prototype.addToDialogComponentMap = function (componentName, component) {
+            this.dialogComponentMap.set(componentName, component);
+        };
+        RendererPlugin.prototype.getDialogComponent = function (componentName) {
+            return this.dialogComponentMap.get(componentName);
+        };
         RendererPlugin.prototype.activate = function () {
-            this.pluginStore.addFunction("Renderer.add", this.addToNgModuleMap.bind(this));
-            this.pluginStore.addFunction("Renderer.remove", this.removeFromNgModuleMap.bind(this));
-            this.pluginStore.addFunction("Renderer.getModulesInPlacement", this.getModulesInPlacement.bind(this));
+            this.pluginStore.addFunction(exports.FunctionNames.RENDERER_ADD, this.addToNgModuleMap.bind(this));
+            this.pluginStore.addFunction(exports.FunctionNames.RENDERER_ONCE, this.addToRenderOnceModule.bind(this));
+            this.pluginStore.addFunction(exports.FunctionNames.RENDERER_REGIST_DIALOG_COMPONENT, this.addToDialogComponentMap.bind(this));
+            this.pluginStore.addFunction(exports.FunctionNames.RENDERER_GET_DIALOG_COMPONENT, this.getDialogComponent.bind(this));
+            this.pluginStore.addFunction(exports.FunctionNames.RENDERER_REMOVE, this.removeFromNgModuleMap.bind(this));
+            this.pluginStore.addFunction(exports.FunctionNames.RENDERER_GET_MODULES_IN_PLACEMENT, this.getModulesInPlacement.bind(this));
         };
         RendererPlugin.prototype.deactivate = function () {
-            this.pluginStore.removeFunction("Renderer.add");
-            this.pluginStore.removeFunction("Renderer.remove");
-            this.pluginStore.removeFunction("Renderer.getModulesInPlacement");
+            this.pluginStore.removeFunction(exports.FunctionNames.RENDERER_ADD);
+            this.pluginStore.removeFunction(exports.FunctionNames.RENDERER_ONCE);
+            this.pluginStore.removeFunction(exports.FunctionNames.RENDERER_REGIST_DIALOG_COMPONENT);
+            this.pluginStore.removeFunction(exports.FunctionNames.RENDERER_GET_DIALOG_COMPONENT);
+            this.pluginStore.removeFunction(exports.FunctionNames.RENDERER_REMOVE);
+            this.pluginStore.removeFunction(exports.FunctionNames.RENDERER_GET_MODULES_IN_PLACEMENT);
         };
         return RendererPlugin;
     }());
@@ -217,7 +299,7 @@
         }
         RendererComponent.prototype.ngAfterViewInit = function () {
             var _this = this;
-            this.pluginStore.addEventListener("Renderer.componentUpdated", function (event) {
+            this.pluginStore.addEventListener(exports.FunctionNames.RENDERER_COMPONENT_UPDATED, function (event) {
                 if (event.placement === _this.placement) {
                     // https://segmentfault.com/a/1190000013972657
                     // ExpressionChangedAfterItHasBeenCheckedError error
@@ -229,9 +311,9 @@
         };
         RendererComponent.prototype.renderComponent = function (placement) {
             var _this = this;
-            console.log(">> Renderer render");
+            console.log(">> Renderer in " + placement);
             this.componentAnchor.clear();
-            var modules = this.pluginStore.execFunction("Renderer.getModulesInPlacement", placement);
+            var modules = this.pluginStore.execFunction(exports.FunctionNames.RENDERER_GET_MODULES_IN_PLACEMENT, placement);
             if (modules && modules.length > 0) {
                 modules.forEach(function (module) {
                     var injector = i0.ɵcreateInjector(module, _this.injector);
@@ -271,7 +353,7 @@
         }
         RendererDirector.prototype.ngAfterViewInit = function () {
             var _this = this;
-            this.pluginStore.addEventListener("Renderer.componentUpdated", function (event) {
+            this.pluginStore.addEventListener(exports.FunctionNames.RENDERER_COMPONENT_UPDATED, function (event) {
                 if (event.placement === _this.placement) {
                     Promise.resolve(null).then(function () {
                         _this.renderComponent(event.placement);
@@ -283,7 +365,7 @@
             var _this = this;
             console.log(">> Renderer render: ", this.placement);
             this.ref.clear();
-            var modules = this.pluginStore.execFunction("Renderer.getModulesInPlacement", placement);
+            var modules = this.pluginStore.execFunction(exports.FunctionNames.RENDERER_GET_MODULES_IN_PLACEMENT, placement);
             if (modules && modules.length > 0) {
                 modules.forEach(function (module) {
                     var injector = i0.ɵcreateInjector(module, _this.injector);
@@ -320,7 +402,33 @@
                 }]
         }], null, null); })();
 
+    var LocalStorage = {
+        set: function (key, data) {
+            if (typeof data === "object") {
+                localStorage.setItem(key, JSON.stringify(data));
+            }
+            else {
+                localStorage.setItem(key, data);
+            }
+        },
+        get: function (key) {
+            var data = localStorage.getItem(key);
+            if (!data)
+                return null;
+            try {
+                return JSON.parse(data);
+            }
+            catch (error) {
+                return data;
+            }
+        },
+        remove: function (key) {
+            localStorage.removeItem(key);
+        },
+    };
+
     exports.Event = Event;
+    exports.LocalStorage = LocalStorage;
     exports.PluginStore = PluginStore;
     exports.RendererComponent = RendererComponent;
     exports.RendererDirector = RendererDirector;
