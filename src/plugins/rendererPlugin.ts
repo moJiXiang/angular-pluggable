@@ -8,6 +8,8 @@ export type ComponentUrl = string;
 
 export class RendererPlugin implements IPlugin {
   public pluginStore: PluginStore = new PluginStore();
+  public title = "渲染插件";
+  public id = "renderer-plugin";
   private dialogComponentMap = new Map<string, Component>();
   private componentsMap = new Map<string, Array<Type<Component>>>();
 

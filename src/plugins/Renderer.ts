@@ -12,6 +12,8 @@ import {
   Inject,
   ComponentFactoryResolver,
   Type,
+  ComponentRef,
+  OnDestroy,
 } from "@angular/core";
 import { Event, RenderderEvent } from "../Event";
 import { FunctionNames } from "../FunctionNames";
@@ -21,13 +23,15 @@ import { usePluginStore } from "../hooks/usePluginStore";
   selector: "Renderer",
   template: `<ng-container #componentAnchor></ng-container>`,
 })
-export class RendererComponent implements AfterViewInit {
+export class RendererComponent implements AfterViewInit, OnDestroy {
   @Input() placement!: string;
 
   @ViewChild("componentAnchor", { read: ViewContainerRef })
   componentAnchor!: ViewContainerRef;
 
   private pluginStore = usePluginStore();
+
+  private componentRefs: ComponentRef<Component>[] = [];
 
   constructor(private resolver: ComponentFactoryResolver) {}
 
@@ -58,9 +62,15 @@ export class RendererComponent implements AfterViewInit {
         console.log(`>> Renderer Plugin ${component.name} in ${placement}`);
         const componentFactory =
           this.resolver.resolveComponentFactory(component);
-        const componentRef =
-          this.componentAnchor.createComponent(componentFactory);
+        const ref = this.componentAnchor.createComponent(componentFactory);
+        this.componentRefs.push(ref);
       });
+    }
+  }
+
+  ngOnDestroy() {
+    for (let ref of this.componentRefs) {
+      ref.destroy();
     }
   }
 }
@@ -68,10 +78,12 @@ export class RendererComponent implements AfterViewInit {
 @Directive({
   selector: "[renderer]",
 })
-export class RendererDirector implements AfterViewInit {
+export class RendererDirector implements AfterViewInit, OnDestroy {
   @Input() placement!: string;
 
   private pluginStore = usePluginStore();
+
+  private componentRefs: ComponentRef<Component>[] = [];
 
   constructor(
     private ref: ViewContainerRef,
@@ -104,8 +116,15 @@ export class RendererDirector implements AfterViewInit {
         const componentFactory =
           this.resolver.resolveComponentFactory(component);
 
-        this.ref.createComponent(componentFactory);
+        const ref = this.ref.createComponent(componentFactory);
+        this.componentRefs.push(ref);
       });
+    }
+  }
+
+  ngOnDestroy() {
+    for (let ref of this.componentRefs) {
+      ref.destroy();
     }
   }
 }

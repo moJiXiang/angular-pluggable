@@ -235,6 +235,11 @@
     "@babel/helper-validator-identifier" "^7.14.0"
     to-fast-properties "^2.0.0"
 
+"@types/events@^3.0.0":
+  version "3.0.0"
+  resolved "https://registry.nlark.com/@types/events/download/@types/events-3.0.0.tgz?cache=0&sync_timestamp=1621240973099&other_urls=https%3A%2F%2Fregistry.nlark.com%2F%40types%2Fevents%2Fdownload%2F%40types%2Fevents-3.0.0.tgz#2862f3f58a9a7f7c3e78d79f130dd4d71c25c2a7"
+  integrity sha1-KGLz9Yqaf3w+eNefEw3U1xwlwqc=
+
 "@types/semver@^7.3.6":
   version "7.3.6"
   resolved "https://registry.nlark.com/@types/semver/download/@types/semver-7.3.6.tgz?cache=0&sync_timestamp=1620925383788&other_urls=https%3A%2F%2Fregistry.nlark.com%2F%40types%2Fsemver%2Fdownload%2F%40types%2Fsemver-7.3.6.tgz#e9831776f4512a7ba6da53e71c26e5fb67882d63"
@@ -418,6 +423,11 @@ escape-string-regexp@^1.0.5:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/escape-string-regexp/-/escape-string-regexp-1.0.5.tgz#1b61c0562190a8dff6ae3bb2cf0200ca130b86d4"
   integrity sha1-G2HAViGQqN/2rjuyzwIAyhMLhtQ=
+
+events@^3.3.0:
+  version "3.3.0"
+  resolved "https://registry.npm.taobao.org/events/download/events-3.3.0.tgz?cache=0&sync_timestamp=1614444817773&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fevents%2Fdownload%2Fevents-3.3.0.tgz#31a95ad0a924e2d2c419a813aeb2c4e878ea7400"
+  integrity sha1-Mala0Kkk4tLEGagTrrLE6HjqdAA=
 
 fill-range@^7.0.1:
   version "7.0.1"
@@ -727,6 +737,11 @@ tslib@^2.0.0:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-2.2.0.tgz#fb2c475977e35e241311ede2693cee1ec6698f5c"
   integrity sha512-gS9GVHRU+RGn5KQM2rllAlR3dU6m7AcpJKdtH8gFvQiC4Otgk98XnmMU+nZenHt/+VhnBPWwgrJsyrdcw6i23w==
+
+typedi@^0.10.0:
+  version "0.10.0"
+  resolved "https://registry.npm.taobao.org/typedi/download/typedi-0.10.0.tgz#e8f9a5ee100b84addbdfb57fe90d8d9ed2a21dea"
+  integrity sha1-6Pml7hALhK3b37V/6Q2NntKiHeo=
 
 typescript@4.0.2:
   version "4.0.2"

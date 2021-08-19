@@ -4,6 +4,8 @@ import { Component, NgModule, Type } from "@angular/core";
 export declare type ComponentUrl = string;
 export declare class RendererPlugin implements IPlugin {
     pluginStore: PluginStore;
+    title: string;
+    id: string;
     private dialogComponentMap;
     private componentsMap;
     getPluginName(): string;

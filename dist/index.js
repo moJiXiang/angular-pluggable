@@ -1,8 +1,8 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('rxjs'), require('semver'), require('@angular/core')) :
-    typeof define === 'function' && define.amd ? define(['exports', 'rxjs', 'semver', '@angular/core'], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.angularPluggable = {}, global.rxjs, global.semver, global.ng.core));
-}(this, (function (exports, rxjs, semver, i0) { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('events'), require('rxjs'), require('semver'), require('@angular/core')) :
+    typeof define === 'function' && define.amd ? define(['exports', 'events', 'rxjs', 'semver', '@angular/core'], factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.angularPluggable = {}, global.events, global.rxjs, global.semver, global.ng.core));
+}(this, (function (exports, events, rxjs, semver, i0) { 'use strict';
 
     function _interopNamespace(e) {
         if (e && e.__esModule) return e;
@@ -57,13 +57,36 @@
         return EventCallbackRegsitry;
     }());
 
-    var PluginStore = /** @class */ (function () {
+    var __extends$1 = (undefined && undefined.__extends) || (function () {
+        var extendStatics = function (d, b) {
+            extendStatics = Object.setPrototypeOf ||
+                ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+                function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+            return extendStatics(d, b);
+        };
+        return function (d, b) {
+            extendStatics(d, b);
+            function __() { this.constructor = d; }
+            d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+        };
+    })();
+    var PluginStore = /** @class */ (function (_super) {
+        __extends$1(PluginStore, _super);
         function PluginStore() {
-            this.observerMap = new Map();
-            this.functionArray = new Map();
-            this.pluginMap = new Map();
-            this._eventCallbackRegsitry = new EventCallbackRegsitry();
+            var _this = _super.call(this) || this;
+            _this._observerMap = new Map();
+            _this._functionArray = new Map();
+            _this._pluginMap = new Map();
+            _this._eventCallbackRegistry = new EventCallbackRegsitry();
+            return _this;
         }
+        Object.defineProperty(PluginStore.prototype, "observerMap", {
+            get: function () {
+                return this._observerMap;
+            },
+            enumerable: false,
+            configurable: true
+        });
         Object.defineProperty(PluginStore.prototype, "context", {
             get: function () {
                 return this._context;
@@ -78,6 +101,9 @@
                 versionDiff === "minor") &&
                 semver.gte(installedVersion, requiredVersion));
         };
+        PluginStore.prototype.getInstalledPlugins = function () {
+            return Array.from(this._pluginMap.values());
+        };
         PluginStore.prototype.useContext = function (context) {
             this._context = context;
         };
@@ -89,11 +115,15 @@
             var pluginNameAndVer = plugin.getPluginName();
             var _a = pluginNameAndVer.split("@"), pluginName = _a[0]; _a[1];
             var pluginDependencies = plugin.getDependencies() || [];
+            var installed = this._pluginMap.get(pluginName);
+            if (installed) {
+                return;
+            }
             // check dependencies is installed
             var installErrors = [];
             pluginDependencies.forEach(function (dep) {
                 var _a = dep.split("@"), depName = _a[0], depVersion = _a[1];
-                var plugin = _this.pluginMap.get(depName);
+                var plugin = _this._pluginMap.get(depName);
                 if (!plugin) {
                     installErrors.push("Plugin " + pluginName + ": " + depName + " has not installed!");
                 }
@@ -105,7 +135,7 @@
                 }
             });
             if (installErrors.length === 0) {
-                this.pluginMap.set(pluginName, plugin);
+                this._pluginMap.set(pluginName, plugin);
                 plugin.init(this);
                 plugin.activate();
             }
@@ -114,45 +144,51 @@
             }
         };
         PluginStore.prototype.uninstall = function (pluginName) {
-            var plugin = this.pluginMap.get(pluginName);
+            var plugin = this._pluginMap.get(pluginName);
             if (plugin) {
                 plugin.deactivate();
-                this.pluginMap.delete(pluginName);
+                this._pluginMap.delete(pluginName);
             }
         };
         PluginStore.prototype.addFunction = function (key, fn) {
-            this.functionArray.set(key, fn);
+            this._functionArray.set(key, fn);
         };
         PluginStore.prototype.execFunction = function (key) {
             var args = [];
             for (var _i = 1; _i < arguments.length; _i++) {
                 args[_i - 1] = arguments[_i];
             }
-            var fn = this.functionArray.get(key);
+            var fn = this._functionArray.get(key);
             if (fn) {
                 return fn.apply(void 0, args);
             }
         };
         PluginStore.prototype.removeFunction = function (key) {
-            this.functionArray.delete(key);
+            this._functionArray.delete(key);
         };
         PluginStore.prototype.addEventListener = function (name, callback) {
-            this._eventCallbackRegsitry.addEventListener(name, callback);
+            this.addListener(name, callback);
+        };
+        PluginStore.prototype.addOnceEventListener = function (name, callback) {
+            this.once(name, callback);
         };
         PluginStore.prototype.removeEventListener = function (name, callback) {
-            this._eventCallbackRegsitry.removeEventListener(name, callback);
+            this.removeListener(name, callback);
         };
         PluginStore.prototype.dispatchEvent = function (event) {
-            this._eventCallbackRegsitry.dispatchEvent(event);
+            this.emit(event.name, event);
+        };
+        PluginStore.prototype.removeAllEvents = function () {
+            this.removeAllListeners();
         };
         PluginStore.prototype.registObserver = function (name, data) {
-            this.observerMap.set(name, new rxjs.BehaviorSubject(data || null));
+            this._observerMap.set(name, new rxjs.BehaviorSubject(data || null));
         };
         PluginStore.prototype.getObserver = function (name) {
-            return this.observerMap.get(name);
+            return this._observerMap.get(name);
         };
         return PluginStore;
-    }());
+    }(events.EventEmitter));
 
     var pluginStore;
     var PluginStoreInstance = /** @class */ (function () {
@@ -226,6 +262,8 @@
     var RendererPlugin = /** @class */ (function () {
         function RendererPlugin() {
             this.pluginStore = new PluginStore();
+            this.title = "渲染插件";
+            this.id = "renderer-plugin";
             this.dialogComponentMap = new Map();
             this.componentsMap = new Map();
         }
@@ -296,6 +334,7 @@
         function RendererComponent(resolver) {
             this.resolver = resolver;
             this.pluginStore = usePluginStore();
+            this.componentRefs = [];
         }
         RendererComponent.prototype.ngAfterViewInit = function () {
             var _this = this;
@@ -317,8 +356,15 @@
                 components.forEach(function (component) {
                     console.log(">> Renderer Plugin " + component.name + " in " + placement);
                     var componentFactory = _this.resolver.resolveComponentFactory(component);
-                    _this.componentAnchor.createComponent(componentFactory);
+                    var ref = _this.componentAnchor.createComponent(componentFactory);
+                    _this.componentRefs.push(ref);
                 });
+            }
+        };
+        RendererComponent.prototype.ngOnDestroy = function () {
+            for (var _i = 0, _a = this.componentRefs; _i < _a.length; _i++) {
+                var ref = _a[_i];
+                ref.destroy();
             }
         };
         RendererComponent.ɵfac = function RendererComponent_Factory(t) { return new (t || RendererComponent)(i0__namespace.ɵɵdirectiveInject(i0__namespace.ComponentFactoryResolver)); };
@@ -349,6 +395,7 @@
             this.ref = ref;
             this.resolver = resolver;
             this.pluginStore = usePluginStore();
+            this.componentRefs = [];
         }
         RendererDirector.prototype.ngAfterViewInit = function () {
             var _this = this;
@@ -368,8 +415,15 @@
                 components.forEach(function (component) {
                     console.log(">> Renderer Plugin " + component.name + " in " + placement);
                     var componentFactory = _this.resolver.resolveComponentFactory(component);
-                    _this.ref.createComponent(componentFactory);
+                    var ref = _this.ref.createComponent(componentFactory);
+                    _this.componentRefs.push(ref);
                 });
+            }
+        };
+        RendererDirector.prototype.ngOnDestroy = function () {
+            for (var _i = 0, _a = this.componentRefs; _i < _a.length; _i++) {
+                var ref = _a[_i];
+                ref.destroy();
             }
         };
         RendererDirector.ɵfac = function RendererDirector_Factory(t) { return new (t || RendererDirector)(i0__namespace.ɵɵdirectiveInject(i0__namespace.ViewContainerRef), i0__namespace.ɵɵdirectiveInject(i0__namespace.ComponentFactoryResolver)); };
@@ -400,33 +454,7 @@
                 }]
         }], null, null); })();
 
-    var LocalStorage = {
-        set: function (key, data) {
-            if (typeof data === "object") {
-                localStorage.setItem(key, JSON.stringify(data));
-            }
-            else {
-                localStorage.setItem(key, data);
-            }
-        },
-        get: function (key) {
-            var data = localStorage.getItem(key);
-            if (!data)
-                return null;
-            try {
-                return JSON.parse(data);
-            }
-            catch (error) {
-                return data;
-            }
-        },
-        remove: function (key) {
-            localStorage.removeItem(key);
-        },
-    };
-
     exports.Event = Event;
-    exports.LocalStorage = LocalStorage;
     exports.PluginStore = PluginStore;
     exports.RendererComponent = RendererComponent;
     exports.RendererDirector = RendererDirector;

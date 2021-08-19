@@ -1,11 +1,9 @@
 import { Event } from "./Event";
 
 export class EventCallbackRegsitry {
-  private _registry: Map<string, Array<(event: Event) => {}>>;
+  private _registry: Map<string, Array<(event: Event) => {}>> = new Map();
 
-  constructor() {
-    this._registry = new Map();
-  }
+  constructor() {}
 
   addEventListener(name: string, callback: any) {
     let callbacks = this._registry.get(name);

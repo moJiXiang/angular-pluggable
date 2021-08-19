@@ -16,6 +16,7 @@
   "devDependencies": {
     "@angular/compiler": "11.2.3",
     "@angular/compiler-cli": "11.2.3",
+    "@types/events": "^3.0.0",
     "@types/semver": "^7.3.6",
     "rimraf": "^3.0.2",
     "rollup": "^2.48.0",
@@ -24,8 +25,10 @@
   "dependencies": {
     "@angular/common": "11.2.3",
     "@angular/core": "11.2.3",
+    "events": "^3.3.0",
     "rxjs": "6.6.3",
-    "semver": "^7.3.5"
+    "semver": "^7.3.5",
+    "typedi": "^0.10.0"
   },
   "files": [
     "dist"
